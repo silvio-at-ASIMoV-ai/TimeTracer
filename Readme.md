@@ -38,7 +38,9 @@ a jar in the *target/scala-3.3.1* folder
 5. To insert rows click inside the table and press the down arrow on the last row or anywhere on the table if there are no rows
 6. To modify data in the table just click on the field and start typing
 7. To delete a row press *ctrl-del*
-- Any change will disable the radio buttons and show a "change pending" text, now you have the option to *apply* or *undo* the change with the corresponding button
+
+Any change will disable the radio buttons and show a "change pending" text, now you have the option to *apply* or *undo* the change with the corresponding button
+
 ---
 ![FirstLoginChangePassword.png](ReadmeResources%2FFirstLoginChangePassword.png)
 ![PunchInForm.png](ReadmeResources%2FPunchInForm.png)

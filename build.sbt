@@ -22,7 +22,7 @@ libraryDependencies ++= Seq(
 )
 
 assembly / assemblyMergeStrategy := {
-  case PathList("META-INF", xs*) => MergeStrategy.discard
+  case PathList("META-INF", _*) => MergeStrategy.discard
   case "reference.conf" => MergeStrategy.concat
   case x => MergeStrategy.first
 }
