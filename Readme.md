@@ -44,6 +44,7 @@ Any change will disable the radio buttons and show a "change pending" text, now 
 ---
 ![FirstLoginChangePassword.png](ReadmeResources%2FFirstLoginChangePassword.png)
 ![PunchInForm.png](ReadmeResources%2FPunchInForm.png)
+
 8. Once  those tables are ready, the users can do their first login with their username and any password, then they will be prompted to change their password.
 9. Any non Admin user will then access their punch-in form.
 10. In the punch-in form they can choose the project to work on, and if they are punching IN or OUT.
