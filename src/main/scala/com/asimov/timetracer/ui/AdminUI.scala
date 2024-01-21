@@ -262,8 +262,8 @@ object AdminUI extends Dialog {
 
   private def resetChanges(): Unit = {
     updatesPending.text = " "
-    refreshTable()
     enableTableButtons(true)
+    refreshTable()
     updates.clear()
     appending = None
   }

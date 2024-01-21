@@ -37,11 +37,11 @@ object ChangePasswordUI extends Dialog {
     show()
   }
 
-  private def go2Next(): Unit = {
+  private def goBack(): Unit = {
     roleID match {
       case 1 =>
         hide()
-      //admin()
+        AdminUI()
       case _ =>
         hide()
         PunchInUI(userName.text, employeeID, roleID)
@@ -54,7 +54,6 @@ object ChangePasswordUI extends Dialog {
     verPwd.peer.setText("")
   }
 
-  private def goBack(): Unit = if(roleID == 1) AdminUI() else PunchInUI(userName.text, employeeID, roleID)
   private def change(): Unit = {
     def doChange(): Unit = {
       if (newPwd.password.mkString == verPwd.password.mkString) {
@@ -66,14 +65,14 @@ object ChangePasswordUI extends Dialog {
           statement.setString(2, userName.text)
           if (statement.executeUpdate() > 0) {
             showMessage(this.peer, "Password Successfully Changed", "Change Password", false)
-            go2Next()
+            goBack()
           } else {
             showMessage(this.peer, "Error Changing Password", "Change Password", true)
-            go2Next()
+            goBack()
           }
         } else {
           showMessage(this.peer, "Error Changing Password", "Change Password", true)
-          go2Next()
+          goBack()
         }
       } else {
         showMessage(this.peer, "Passwords don't match", "Change Password", true)
@@ -92,7 +91,6 @@ object ChangePasswordUI extends Dialog {
     } else {
       doChange()
     }
-    goBack()
   }
 
   val userName = new MyLabel("")
@@ -132,7 +130,7 @@ object ChangePasswordUI extends Dialog {
   listenTo(ok, cancel)
   reactions += {
     case ButtonClicked(`ok`) => change()
-    case ButtonClicked(`cancel`) => goBack()
+    case ButtonClicked(`cancel`) => if(firstLogin) System.exit(0) else goBack()
   }
   pack()
   centerOnScreen()
