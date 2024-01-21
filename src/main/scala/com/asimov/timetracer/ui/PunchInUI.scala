@@ -107,28 +107,41 @@ object PunchInUI extends Dialog {
     roleID = roleId
     employee.text = getEmployeeName
     val lastTimeData = getLastTimeData
-    if(lastTimeData._1 != null) {
-      out.selected = lastTimeData._2
-      in.selected = !lastTimeData._2
-      projectsLV.selectIndices(projects.indexOf(projects.filter(_._1 == lastTimeData._3).head))
-      lastPunchedIn.text = formatter.format(lastTimeData._1)
+    getLastTimeData match {
+      case Some((time, i, projId)) =>
+        out.selected = i
+        in.selected = !i
+        projectsLV.selectIndices(projects.indexOf(projects.filter(_._1 == projId).head))
+        lastPunchedIn.text = formatter.format(time)
+      case None =>
     }
     show()
   }
 
-  private def getLastTimeData: (Date, Boolean, Int) = {
+  private def remind(): Unit = {
+    getLastTimeData match {
+      case Some((time, _, projId)) =>
+        hide()
+        ReminderUI(formatter.format(time), projects.filter(_._1 == projId).head._2)
+      case None =>
+    }
+  }
+
+  private def getLastTimeData: Option[(Date, Boolean, Int)] = {
     if (db.connection.nonEmpty) {
       val statement = db.connection.get.prepareStatement(
         "SELECT * FROM TimeTracer.Times WHERE EmployeeID = ? ORDER BY PunchedTime DESC")
       statement.setInt(1, employeeID)
       val resultSet = statement.executeQuery()
       if (resultSet.next()) {
-        (resultSet.getTimestamp(4), resultSet.getBoolean(5), resultSet.getInt(3))
+        Some((resultSet.getTimestamp(4),
+          resultSet.getBoolean(5),
+          resultSet.getInt(3)))
       } else {
-        (null,false,0)
+        None
       }
     } else {
-      (null,false,0)
+      None
     }
   }
 
@@ -173,12 +186,6 @@ object PunchInUI extends Dialog {
       statement.setTimestamp(6, timeStamp)
       statement.execute()
     }
-  }
-
-  private def remind(): Unit = {
-    val(t, i, p) = getLastTimeData
-    hide()
-    ReminderUI(formatter.format(t), projects.filter(_._1 == p).head._2)
   }
 
   title = "Time Tracer - Punch In"
