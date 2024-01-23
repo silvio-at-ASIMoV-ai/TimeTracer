@@ -73,7 +73,7 @@ object LoginUI extends Dialog {
   def login(userName: String, password: String): Either[Either[String, (String, Int, Int)], (Boolean, String, Int, Int)] = {
     val db = MySQL
     if (db.connection.nonEmpty) {
-      val statement = db.connection.get.prepareStatement("SELECT * FROM TimeTracer.Users WHERE UserName = ?")
+      val statement = db.connection.get.prepareStatement("SELECT * FROM `TimeTracer`.`Users` WHERE `UserName` = ?")
       statement.setString(1, userName)
       val resultSet = statement.executeQuery()
       if (resultSet.next()) {

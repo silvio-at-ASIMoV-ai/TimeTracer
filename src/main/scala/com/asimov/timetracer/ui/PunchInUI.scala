@@ -106,7 +106,11 @@ object PunchInUI extends Dialog {
     employeeID = employeeId
     roleID = roleId
     employee.text = getEmployeeName
-    val lastTimeData = getLastTimeData
+    refresh()
+    show()
+  }
+
+  def refresh(): Unit = {
     getLastTimeData match {
       case Some((time, i, projId)) =>
         out.selected = i
@@ -115,7 +119,6 @@ object PunchInUI extends Dialog {
         lastPunchedIn.text = formatter.format(time)
       case None =>
     }
-    show()
   }
 
   private def remind(): Unit = {
@@ -130,7 +133,7 @@ object PunchInUI extends Dialog {
   private def getLastTimeData: Option[(Date, Boolean, Int)] = {
     if (db.connection.nonEmpty) {
       val statement = db.connection.get.prepareStatement(
-        "SELECT * FROM TimeTracer.Times WHERE EmployeeID = ? ORDER BY PunchedTime DESC")
+        "SELECT * FROM `TimeTracer`.`Times` WHERE `EmployeeID` = ? ORDER BY `PunchedTime` DESC")
       statement.setInt(1, employeeID)
       val resultSet = statement.executeQuery()
       if (resultSet.next()) {
@@ -147,7 +150,7 @@ object PunchInUI extends Dialog {
 
   private def getEmployeeName: String = {
     if (db.connection.nonEmpty) {
-      val statement = db.connection.get.prepareStatement("SELECT * FROM TimeTracer.Employees WHERE IDEmployee = ?")
+      val statement = db.connection.get.prepareStatement("SELECT * FROM `TimeTracer`.`Employees` WHERE `IDEmployee` = ?")
       statement.setInt(1, employeeID)
       val resultSet = statement.executeQuery()
       if (resultSet.next()) {
@@ -162,7 +165,7 @@ object PunchInUI extends Dialog {
 
   private def getProjects: List[(Int,String)] = {
     if (db.connection.nonEmpty) {
-      val statement = db.connection.get.prepareStatement("SELECT * FROM TimeTracer.Projects")
+      val statement = db.connection.get.prepareStatement("SELECT * FROM `TimeTracer`.`Projects`")
       val rs = statement.executeQuery()
       Iterator.from(0).takeWhile(_ => rs.next())
         .map(_ => (rs.getInt(1), rs.getString(2)))
@@ -174,7 +177,7 @@ object PunchInUI extends Dialog {
 
   private def punchIn(): Unit = {
     if (db.connection.nonEmpty) {
-      val statement = db.connection.get.prepareStatement("INSERT INTO TimeTracer.Times " +
+      val statement = db.connection.get.prepareStatement("INSERT INTO `TimeTracer`.`Times` " +
         "(`EmployeeID`, `ProjectID`, `PunchedTime`, `In`, `InsertUser`, `InsertTimestamp`) VALUES (?, ?, ?, ?, ?, ?)")
       val timeStamp: Timestamp = new Timestamp(System.currentTimeMillis())
       val projId = projects(projectsLV.peer.getSelectedIndex)._1
@@ -194,12 +197,18 @@ object PunchInUI extends Dialog {
   setCancelButton(peer.getRootPane, cancel.peer)
   listenTo(ok, cancel, accept, reminder, changePwd)
   reactions += {
-    case ButtonClicked(`ok`) => punchIn()
+    case ButtonClicked(`ok`) =>
+      punchIn()
       System.exit(0)
-    case ButtonClicked(`cancel`) => System.exit(0)
-    case ButtonClicked(`accept`) => punchIn()
-    case ButtonClicked(`reminder`) => remind()
-    case ButtonClicked(`changePwd`) => hide()
+    case ButtonClicked(`cancel`) =>
+      System.exit(0)
+    case ButtonClicked(`accept`) =>
+      punchIn()
+      refresh()
+    case ButtonClicked(`reminder`) =>
+      remind()
+    case ButtonClicked(`changePwd`) =>
+      hide()
       ChangePasswordUI(userName, roleID, employeeID, false)
   }
   pack()

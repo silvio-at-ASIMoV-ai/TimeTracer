@@ -61,7 +61,7 @@ object ChangePasswordUI extends Dialog {
         val chPwd = generateHash(userName.text, newPwd.password.mkString)
         val db = MySQL
         if (db.connection.nonEmpty) {
-          val statement = db.connection.get.prepareStatement("UPDATE TimeTracer.Users SET Password = ? WHERE UserName = ?")
+          val statement = db.connection.get.prepareStatement("UPDATE `TimeTracer`.`Users` SET `Password` = ? WHERE `UserName` = ?")
           statement.setString(1, chPwd)
           statement.setString(2, userName.text)
           if (statement.executeUpdate() > 0) {

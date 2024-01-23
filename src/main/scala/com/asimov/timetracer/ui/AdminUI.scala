@@ -238,9 +238,9 @@ object AdminUI extends Dialog {
         for (update <- updates) {
           val timestamp = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date())
           val mod = if (update.tableName == "Times") s", ModifyUser = 'Admin', ModifyTimestamp = '$timestamp' " else ""
-          val query = s"UPDATE TimeTracer.${update.tableName} SET `${update.colName}` = ? $mod WHERE ${update.idCol} = ?"
-          val loggedQuery = s"UPDATE TimeTracer.${update.tableName} " +
-            s"SET `${update.colName}` = '${update.colValue}' $mod WHERE ${update.idCol} = '${update.IdVal}'"
+          val query = s"UPDATE `TimeTracer`.`${update.tableName}` SET `${update.colName}` = ? $mod WHERE `${update.idCol}` = ?"
+          val loggedQuery = s"UPDATE `TimeTracer`.`${update.tableName}` " +
+            s"SET `${update.colName}` = '${update.colValue}' $mod WHERE `${update.idCol}` = '${update.IdVal}'"
           val statement = db.connection.get.prepareStatement(query)
           statement.setString(1, update.colValue)
           statement.setString(2, update.IdVal)
@@ -253,9 +253,9 @@ object AdminUI extends Dialog {
       }
       if(appending.nonEmpty) {
         val tbl = appending.get.tableName
-        val fields = appending.get.columns.keys.mkString("(", ", ", ")")
+        val fields = appending.get.columns.keys.mkString("(`", "`, `", "`)")
         val values = appending.get.columns.values.mkString("(", ", ", ")")
-        val query = s"INSERT INTO TimeTracer.$tbl $fields VALUES $values"
+        val query = s"INSERT INTO `TimeTracer`.`$tbl` $fields VALUES $values"
         if(db.connection.get.createStatement().executeUpdate(query) > 0) {
           Log(query, "")
           showMessage(this.peer, "Append Correctly Applied", "Updated", false)
@@ -265,7 +265,7 @@ object AdminUI extends Dialog {
         val tableName = deleting.get.tableName
         val idCol = deleting.get.idCol
         val idVal = deleting.get.IdVal
-        val query = s"DELETE FROM TimeTracer.$tableName WHERE $idCol = '$idVal'"
+        val query = s"DELETE FROM `TimeTracer`.`$tableName` WHERE `$idCol` = '$idVal'"
         if (db.connection.get.createStatement().executeUpdate(query) > 0) {
           Log(query, deleting.get.previousValue)
           showMessage(this.peer, "Delete Correctly Applied", "Updated", false)
@@ -301,12 +301,12 @@ object AdminUI extends Dialog {
   contents = adminPanel
   listenTo(timesRdo, empsRdo, usersRdo, projsRdo, rolesRdo, logsRdo, applyBtn, undoBtn, closeBtn, chPwdBtn)
   reactions += {
-    case ButtonClicked(`timesRdo`) => readTable("SELECT * FROM TimeTracer.Times ORDER BY PunchedTime DESC", "Times")
-    case ButtonClicked(`empsRdo`) => readTable("SELECT * FROM TimeTracer.Employees", "Employees")
-    case ButtonClicked(`usersRdo`) => readTable("SELECT UserName, RoleID, EmployeeID FROM TimeTracer.Users", "Users")
-    case ButtonClicked(`projsRdo`) => readTable("SELECT * FROM TimeTracer.Projects", "Projects")
-    case ButtonClicked(`rolesRdo`) => readTable("SELECT * FROM TimeTracer.Roles", "Roles")
-    case ButtonClicked(`logsRdo`) => readTable("SELECT * FROM TimeTracer.Log", "Logs")
+    case ButtonClicked(`timesRdo`) => readTable("SELECT * FROM `TimeTracer`.`Times` ORDER BY PunchedTime DESC", "Times")
+    case ButtonClicked(`empsRdo`) => readTable("SELECT * FROM `TimeTracer`.`Employees`", "Employees")
+    case ButtonClicked(`usersRdo`) => readTable("SELECT `UserName`, `RoleID`, `EmployeeID` FROM `TimeTracer`.`Users`", "Users")
+    case ButtonClicked(`projsRdo`) => readTable("SELECT * FROM `TimeTracer`.`Projects`", "Projects")
+    case ButtonClicked(`rolesRdo`) => readTable("SELECT * FROM `TimeTracer`.`Roles`", "Roles")
+    case ButtonClicked(`logsRdo`) => readTable("SELECT * FROM `TimeTracer`.`Log`", "Logs")
     case ButtonClicked(`applyBtn`) => applyChange()
     case ButtonClicked(`undoBtn`) => resetChanges()
     case ButtonClicked(`closeBtn`) => System.exit(0)
