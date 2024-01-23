@@ -12,7 +12,7 @@ libraryDependencies ++= Seq(
   "io.github.nremond" %% "pbkdf2-scala" % "0.7.0",
   "mysql" % "mysql-connector-java" % "8.0.33",
   // https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
-  "org.xerial" % "sqlite-jdbc" % "3.34.0",
+  "org.xerial" % "sqlite-jdbc" % "3.40.1.0",
 // https://mvnrepository.com/artifact/org.scala-lang.modules/scala-swing
   "org.scala-lang.modules" %% "scala-swing" % "3.0.0",
   // https://mvnrepository.com/artifact/com.miglayout/miglayout

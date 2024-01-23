@@ -1,6 +1,6 @@
 package com.asimov.timetracer.ui
 
-import com.asimov.timetracer.{MyLabel, MySQL, showMessage}
+import com.asimov.timetracer.{Log, MyLabel, MySQL, showMessage}
 
 import java.awt.Color
 import java.sql.ResultSet
@@ -19,9 +19,10 @@ import scala.swing.event.Key.{Delete, Down}
 import scala.swing.event.Key.Modifier.Control
 import scala.swing.{BoxPanel, Button, ButtonGroup, Dialog, Dimension, FlowPanel, Label, RadioButton, ScrollPane, Table}
 
-case class UpdateData(tableName: String, colName: String, colValue: String, idCol: String, IdVal: String)
+case class UpdateData(tableName: String, colName: String, colValue: String,
+                      previoiusValue: String, idCol: String, IdVal: String)
 case class AppendData(tableName: String, columns: mutable.HashMap[String, String])
-case class DeleteData(tableName: String, idCol: String, IdVal: String)
+case class DeleteData(tableName: String, previousValue: String, idCol: String, IdVal: String)
 
 object AdminUI extends Dialog {
 
@@ -31,11 +32,21 @@ object AdminUI extends Dialog {
   private val updatesPending = MyLabel(" ")
   updatesPending.foreground = Color.red
 
+  private class MyTableModel extends DefaultTableModel {
+    var lastValue: Option[Object] = None
+
+    override def setValueAt(value: Object, row: Int, col: Int): Unit = {
+      lastValue = Some(getValueAt(row, col))
+      super.setValueAt(value, row, col)
+    }
+
+  }
+
   private val table = new Table() {
     peer.setSelectionMode(ListSelectionModel.SINGLE_SELECTION)
     peer.setPreferredScrollableViewportSize(new Dimension(750, 200))
     peer.setFillsViewportHeight(true)
-    model = new DefaultTableModel()
+    model = new MyTableModel()
     autoResizeMode = AutoResizeMode.Off
     showGrid = true
     model.addTableModelListener((e: TableModelEvent) => {
@@ -49,13 +60,17 @@ object AdminUI extends Dialog {
         case None =>               // Update Mode
           if (e.getFirstRow >= 0 && e.getColumn >= 0) {
           if (tableTitle.text != "Logs") {
-            updates += UpdateData(tableTitle.text,
-              model.getColumnName(e.getColumn),
-              model.getValueAt(e.getFirstRow, e.getColumn).toString,
-              model.getColumnName(0),
-              model.getValueAt(e.getFirstRow, 0).toString)
-            updatesPending.text = "Updates Pending!"
-            enableTableButtons(false)
+            val lastValue = model.asInstanceOf[MyTableModel].lastValue.getOrElse("").toString
+            if(lastValue != model.getValueAt(e.getFirstRow, e.getColumn).toString) {
+              updates += UpdateData(tableTitle.text,
+                model.getColumnName(e.getColumn),
+                model.getValueAt(e.getFirstRow, e.getColumn).toString,
+                s"${model.getColumnName(e.getColumn)}=$lastValue",
+                model.getColumnName(0),
+                model.getValueAt(e.getFirstRow, 0).toString)
+              updatesPending.text = "Updates Pending!"
+              enableTableButtons(false)
+            }
           }
         }
       }
@@ -205,12 +220,15 @@ object AdminUI extends Dialog {
   private def deleteRow(): Unit = {
     val tableName = tableTitle.text
     val row = table.peer.getEditingRow
+    val previousValue = (0 until table.model.getColumnCount)
+      .map(i => s"${table.model.getColumnName(i)}=${table.model.getValueAt(row, i)}")
+      .mkString(", ")
     val idCol = table.model.getColumnName(0)
     val idVal = table.model.getValueAt(row, 0).toString
     table.peer.getCellEditor().stopCellEditing()
     table.model.asInstanceOf[DefaultTableModel].removeRow(row)
     updatesPending.text = "Delete Operation Pending!"
-    deleting = Some(DeleteData(tableName, idCol, idVal))
+    deleting = Some(DeleteData(tableName, previousValue, idCol, idVal))
   }
 
   private def applyChange(): Unit = {
@@ -220,11 +238,15 @@ object AdminUI extends Dialog {
         for (update <- updates) {
           val timestamp = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date())
           val mod = if (update.tableName == "Times") s", ModifyUser = 'Admin', ModifyTimestamp = '$timestamp' " else ""
-          val query = s"UPDATE TimeTracer.${update.tableName} SET ${update.colName} = ? $mod WHERE ${update.idCol} = ?"
+          val query = s"UPDATE TimeTracer.${update.tableName} SET `${update.colName}` = ? $mod WHERE ${update.idCol} = ?"
+          val loggedQuery = s"UPDATE TimeTracer.${update.tableName} " +
+            s"SET `${update.colName}` = '${update.colValue}' $mod WHERE ${update.idCol} = '${update.IdVal}'"
           val statement = db.connection.get.prepareStatement(query)
           statement.setString(1, update.colValue)
           statement.setString(2, update.IdVal)
-          oks += (statement.executeUpdate() > 0)
+          val ok = statement.executeUpdate() > 0
+          if(ok) Log(loggedQuery, update.previoiusValue)
+          oks += ok
         }
         if (oks.exists(!_)) showMessage(this.peer, "Problem Updating DataBase", "Errors", true)
         else showMessage(this.peer, "Update Correctly Applied", "Updated", false)
@@ -234,18 +256,20 @@ object AdminUI extends Dialog {
         val fields = appending.get.columns.keys.mkString("(", ", ", ")")
         val values = appending.get.columns.values.mkString("(", ", ", ")")
         val query = s"INSERT INTO TimeTracer.$tbl $fields VALUES $values"
-        if(db.connection.get.createStatement().executeUpdate(query) > 0)
+        if(db.connection.get.createStatement().executeUpdate(query) > 0) {
+          Log(query, "")
           showMessage(this.peer, "Append Correctly Applied", "Updated", false)
-        else showMessage(this.peer, "Problem Updating DataBase", "Errors", true)
+        } else showMessage(this.peer, "Problem Updating DataBase", "Errors", true)
       }
       if(deleting.nonEmpty) {
         val tableName = deleting.get.tableName
         val idCol = deleting.get.idCol
         val idVal = deleting.get.IdVal
         val query = s"DELETE FROM TimeTracer.$tableName WHERE $idCol = '$idVal'"
-        if (db.connection.get.createStatement().executeUpdate(query) > 0)
+        if (db.connection.get.createStatement().executeUpdate(query) > 0) {
+          Log(query, deleting.get.previousValue)
           showMessage(this.peer, "Delete Correctly Applied", "Updated", false)
-        else showMessage(this.peer, "Problem Updating DataBase", "Errors", true)
+        } else showMessage(this.peer, "Problem Updating DataBase", "Errors", true)
       }
       if(updates.isEmpty && appending.isEmpty && deleting.isEmpty)
         showMessage(this.peer, "Nothing to Update", "Errors", true)
