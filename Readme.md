@@ -79,8 +79,6 @@ This project is licensed under the "You can do whatever you like with it" licenc
 
 ### More work to do
 
-The app is usable as is, but there are 3 important things to complete: 
+The app is usable as is, but there are 2 important things to complete: 
 1. I'm not satisfied with the layout of the admin console
-2. As it is now it does not log operations even though there is a logs table, so the next 
-thing I'll do is add logging functionality.
-3. The database password is in clear text in the ini file (~/.Timetracer/TimeTracer.ini), so I have to find a way to solve this problem.
+2. Add a reset password for user in the Admin console
