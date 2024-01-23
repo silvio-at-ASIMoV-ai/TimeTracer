@@ -52,6 +52,7 @@ object ChangePasswordUI extends Dialog {
     oldPwd.peer.setText("")
     newPwd.peer.setText("")
     verPwd.peer.setText("")
+    if(firstLogin) newPwd.requestFocus() else oldPwd.requestFocus()
   }
 
   private def change(): Unit = {
@@ -82,7 +83,7 @@ object ChangePasswordUI extends Dialog {
 
     if (!firstLogin) {
       login(userName.text, oldPwd.password.mkString) match {
-        case Left(value) if value._1 =>
+        case Right(value) if value._1 =>
           doChange()
         case _ =>
           showMessage(this.peer, "Wrong Password", "Change Password", true)

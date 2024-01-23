@@ -70,8 +70,7 @@ object LoginUI extends Dialog {
     add(timeTracer, "cell 3 0")
   }
 
-
-  def login(userName: String, password: String): Either[(Boolean, String, Int, Int), Either[(String, Int, Int), String]] = {
+  def login(userName: String, password: String): Either[Either[String, (String, Int, Int)], (Boolean, String, Int, Int)] = {
     val db = MySQL
     if (db.connection.nonEmpty) {
       val statement = db.connection.get.prepareStatement("SELECT * FROM TimeTracer.Users WHERE UserName = ?")
@@ -82,13 +81,13 @@ object LoginUI extends Dialog {
         val dbPassword = resultSet.getString(2)
         val roleId = resultSet.getInt(3)
         val employeeId = resultSet.getInt(4)
-        if (dbPassword == null) Right(Left(dbUserName, roleId, employeeId)) // new user
-        else Left((Password.verify(dbUserName, password, dbPassword), dbUserName, roleId, employeeId))
+        if (dbPassword == null) Left(Right(dbUserName, roleId, employeeId)) // new user
+        else Right((Password.verify(dbUserName, password, dbPassword), dbUserName, roleId, employeeId))
       } else {
-        Right(Right("Unknown User"))
+        Left(Left("Unknown User"))
       }
     } else {
-      Right(Right("No connection to DataBase"))
+      Left(Left("No connection to DataBase"))
     }
   }
 
@@ -99,12 +98,12 @@ object LoginUI extends Dialog {
       password.requestFocus()
     } else {
       login(userName.text, password.password.mkString) match {
-        case Left(t) => if (t._1) loginSuccess(t._2, t._3, t._4) else
+        case Right(t) => if (t._1) loginSuccess(t._2, t._3, t._4) else
           showMessage(peer, "Access Denied", "Access Denied", true)
           password.peer.setText("")
-        case Right(e) => e match
-          case Left(username, roleId, employeeId) => firstLogin(username, roleId, employeeId)
-          case Right(str) => showMessage(peer, str, "Error", true)
+        case Left(e) => e match
+          case Right(username, roleId, employeeId) => firstLogin(username, roleId, employeeId)
+          case Left(str) => showMessage(peer, str, "Error", true)
       }
     }
   }
