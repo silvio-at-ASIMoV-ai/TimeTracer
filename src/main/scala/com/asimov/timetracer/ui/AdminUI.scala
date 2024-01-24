@@ -228,6 +228,7 @@ object AdminUI extends Dialog {
     table.peer.getCellEditor().stopCellEditing()
     table.model.asInstanceOf[DefaultTableModel].removeRow(row)
     updatesPending.text = "Delete Operation Pending!"
+    enableTableButtons(false)
     deleting = Some(DeleteData(tableName, previousValue, idCol, idVal))
   }
 
