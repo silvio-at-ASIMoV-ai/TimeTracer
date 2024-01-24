@@ -77,8 +77,3 @@ Any change will disable the radio buttons and show a "change pending" text, now 
 
 This project is licensed under the "You can do whatever you like with it" licence
 
-### More work to do
-
-The app is usable as is, but there are 2 important things to complete: 
-1. I'm not satisfied with the layout of the admin console
-2. Add a reset password for user in the Admin console

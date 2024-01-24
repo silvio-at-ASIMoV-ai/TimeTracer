@@ -20,4 +20,3 @@ def main(): Unit = {
 
 }
 
-//TODO Add reset password for user capability in Admin Console
