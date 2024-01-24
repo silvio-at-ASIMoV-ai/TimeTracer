@@ -1,6 +1,7 @@
 package com.asimov.timetracer.ui
 
-import com.asimov.timetracer.{Log, MyLabel, MySQL, showMessage}
+import com.asimov.timetracer.ui.AdminUI.db
+import com.asimov.timetracer.{Log, MyButton, MyLabel, MySQL, showMessage}
 
 import java.awt.Color
 import java.sql.ResultSet
@@ -34,12 +35,10 @@ object AdminUI extends Dialog {
 
   private class MyTableModel extends DefaultTableModel {
     var lastValue: Option[Object] = None
-
     override def setValueAt(value: Object, row: Int, col: Int): Unit = {
       lastValue = Some(getValueAt(row, col))
       super.setValueAt(value, row, col)
     }
-
   }
 
   private val table = new Table() {
@@ -126,38 +125,48 @@ object AdminUI extends Dialog {
     peer.add(Box.createVerticalStrut(around))
   }
 
-  private val applyBtn: Button = new Button("Apply")
-  private val undoBtn: Button = new Button("Undo")
+  private val applyBtn: Button = new MyButton("Apply")
+  private val undoBtn: Button = new MyButton("Undo")
   private val buttonPanel1: BoxPanel = new BoxPanel(Vertical) {
-    contents += updatesPending
-    peer.add(Box.createVerticalStrut(15))
+    peer.add(Box.createVerticalStrut(30))
     contents += applyBtn
     peer.add(Box.createVerticalStrut(15))
     contents += undoBtn
+    peer.add(Box.createVerticalStrut(15))
+    contents += updatesPending
   }
 
   private val logo = new Label() {
     icon = new ImageIcon(getClass.getResource("/logo.png"))
   }
 
-  private val closeBtn: Button = new Button("Close")
-  private val chPwdBtn: Button = new Button("Ch. Pwd")
+  private val closeBtn: Button = new MyButton("Close")
+  private val chPwdBtn: Button = new MyButton("Ch. Pwd")
+  private val resetPwd: Button = new MyButton("Rst  Pwd")
   private val buttonPanel2: BoxPanel = new BoxPanel(Vertical) {
     peer.add(Box.createVerticalStrut(30))
     contents += chPwdBtn
     peer.add(Box.createVerticalStrut(15))
+    contents += resetPwd
+    peer.add(Box.createVerticalStrut(29))
+  }
+
+  private val buttonPanel3: BoxPanel = new BoxPanel(Vertical) {
+    peer.add(Box.createVerticalStrut(42))
     contents += closeBtn
   }
 
   private val bottomPanel: FlowPanel = new FlowPanel(FlowPanel.Alignment.Left)() {
-    peer.add(Box.createHorizontalStrut(10))
-    contents += radioPanel
-    peer.add(Box.createHorizontalStrut(15))
-    contents += buttonPanel1
-    peer.add(Box.createHorizontalStrut(100))
+    peer.add(Box.createHorizontalStrut(35))
     contents += logo
-    peer.add(Box.createHorizontalStrut(100))
+    peer.add(Box.createHorizontalStrut(50))
+    contents += radioPanel
+    peer.add(Box.createHorizontalStrut(40))
+    contents += buttonPanel1
+    peer.add(Box.createHorizontalStrut(30))
     contents += buttonPanel2
+    peer.add(Box.createHorizontalStrut(30))
+    contents += buttonPanel3
   }
 
   private val adminPanel: BoxPanel = new BoxPanel(Vertical) {
@@ -293,6 +302,20 @@ object AdminUI extends Dialog {
     appending = None
   }
 
+  private def resetPwd4User(): Unit = {
+    if(tableTitle.text == "Users") {
+      if (db.connection.nonEmpty) {
+        val user = table.model.getValueAt(table.peer.getSelectedRow, 0).toString
+        val query = "UPDATE `TimeTracer`.`Users` SET `Password` = NULL WHERE `UserName` = ?"
+        val statement = db.connection.get.prepareStatement(query)
+        statement.setString(1, user)
+        if (statement.executeUpdate() > 0) {
+          showMessage(this.peer, "Correctly Reset Password", "Reset Password", false)
+        } else showMessage(this.peer, "Problem Resetting Password", "Reset Password", true)
+      }
+    } else showMessage(this.peer, "Please Select User in Users Table First", "Select User", false)
+  }
+
   private def show(): Unit = visible = true
 
   private def hide(): Unit = visible = false
@@ -300,7 +323,7 @@ object AdminUI extends Dialog {
   private val db = MySQL
   title = "Time Tracer - Admin"
   contents = adminPanel
-  listenTo(timesRdo, empsRdo, usersRdo, projsRdo, rolesRdo, logsRdo, applyBtn, undoBtn, closeBtn, chPwdBtn)
+  listenTo(timesRdo, empsRdo, usersRdo, projsRdo, rolesRdo, logsRdo, applyBtn, undoBtn, closeBtn, chPwdBtn, resetPwd)
   reactions += {
     case ButtonClicked(`timesRdo`) => readTable("SELECT * FROM `TimeTracer`.`Times` ORDER BY PunchedTime DESC", "Times")
     case ButtonClicked(`empsRdo`) => readTable("SELECT * FROM `TimeTracer`.`Employees`", "Employees")
@@ -311,6 +334,7 @@ object AdminUI extends Dialog {
     case ButtonClicked(`applyBtn`) => applyChange()
     case ButtonClicked(`undoBtn`) => resetChanges()
     case ButtonClicked(`closeBtn`) => System.exit(0)
+    case ButtonClicked(`resetPwd`) => resetPwd4User()
     case ButtonClicked(`chPwdBtn`) =>
       hide()
       ChangePasswordUI("Admin", 1, 0, false)
