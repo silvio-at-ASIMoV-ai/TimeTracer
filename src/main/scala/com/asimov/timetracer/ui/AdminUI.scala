@@ -1,6 +1,5 @@
 package com.asimov.timetracer.ui
 
-import com.asimov.timetracer.ui.AdminUI.db
 import com.asimov.timetracer.{Log, MyButton, MyLabel, MySQL, showMessage}
 
 import java.awt.Color
@@ -30,8 +29,13 @@ object AdminUI extends Dialog {
   private var appending: Option[AppendData] = None
   private var deleting: Option[DeleteData] = None
   private val updates: ListBuffer[UpdateData] = new ListBuffer()
-  private val updatesPending = MyLabel(" ")
-  updatesPending.foreground = Color.red
+//  private val updatesPending = MyLabel(" ")
+//  updatesPending.foreground = Color.red
+  private val updatesPending = new MyLabel(" ") {
+    preferredSize = new Dimension(100, 15)
+    foreground = Color.red
+  }
+
 
   private class MyTableModel extends DefaultTableModel {
     var lastValue: Option[Object] = None
@@ -144,7 +148,7 @@ object AdminUI extends Dialog {
   private val chPwdBtn: Button = new MyButton("Ch. Pwd")
   private val resetPwd: Button = new MyButton("Rst  Pwd")
   private val buttonPanel2: BoxPanel = new BoxPanel(Vertical) {
-    peer.add(Box.createVerticalStrut(30))
+    peer.add(Box.createVerticalStrut(28))
     contents += chPwdBtn
     peer.add(Box.createVerticalStrut(15))
     contents += resetPwd
@@ -152,7 +156,7 @@ object AdminUI extends Dialog {
   }
 
   private val buttonPanel3: BoxPanel = new BoxPanel(Vertical) {
-    peer.add(Box.createVerticalStrut(42))
+    peer.add(Box.createVerticalStrut(45))
     contents += closeBtn
   }
 

@@ -38,6 +38,9 @@ a jar in the *target/scala-3.3.1* folder
 5. To insert rows click inside the table and press the down arrow on the last row or anywhere on the table if there are no rows
 6. To modify data in the table just click on the field and start typing
 7. To delete a row press *ctrl-del*
+8. The *Logs* table is read only
+9. To change the Admin password just click on the *Ch. Pwd* button
+10. To reset a user's password, open the *Users* table, select the user and click on the *Rst Pwd* button
 
 Any change will disable the radio buttons and show a "change pending" text, now you have the option to *apply* or *undo* the change with the corresponding button
 
@@ -45,21 +48,21 @@ Any change will disable the radio buttons and show a "change pending" text, now 
 ![FirstLoginChangePassword.png](ReadmeResources%2FFirstLoginChangePassword.png)
 ![PunchInForm.png](ReadmeResources%2FPunchInForm.png)
 
-8. Once  those tables are ready, the users can do their first login with their username and any password, then they will be prompted to change their password.
-9. Any non Admin user will then access their punch-in form.
-10. In the punch-in form they can choose the project to work on, and if they are punching IN or OUT.
-11. If there is at least 1 record for that employee in the *Times* table, the fields will be pre-filled and the last punch-in time will show on the bottom of the form.
-12. The *OK* button will just record the data and exit
-13. The *Accept* button will record the data but will not exit
-14. The *Remind* button will show a small dialog showing the punch-in time and the project, with the option to close or go back to the punch-in form
-15. The *Ch. Pwd* will let the user change their password
+11. Once  those tables are ready, the users can do their first login with their username and any password, then they will be prompted to change their password.
+12. Any non Admin user will then access their punch-in form.
+13. In the punch-in form they can choose the project to work on, and if they are punching IN or OUT.
+14. If there is at least 1 record for that employee in the *Times* table, the fields will be pre-filled and the last punch-in time will show on the bottom of the form.
+15. The *OK* button will just record the data and exit
+16. The *Accept* button will record the data but will not exit
+17. The *Remind* button will show a small dialog showing the punch-in time and the project, with the option to close or go back to the punch-in form
+18. The *Ch. Pwd* will let the user change their password
 
 ![Reminder.png](ReadmeResources%2FReminder.png)
 ![ChangePassword.png](ReadmeResources%2FChangePassword.png)
 ---
-16. All *OK* buttons can be clicked with the *Enter* key.
-17. All *Cancel* buttons can be clicked with the *Esc* key.
-18. You can navigate all fields with the *Tab* key in a natural order.
+19. All *OK* buttons can be clicked with the *Enter* key.
+20. All *Cancel* buttons can be clicked with the *Esc* key.
+21. You can navigate all fields with the *Tab* key in a natural order.
 
 ### Built With
 
@@ -70,7 +73,7 @@ Any change will disable the radio buttons and show a "change pending" text, now 
 
 ### Authors
 
-- **Silvestre Pitti** - *Wrote bulk of project* -
+- **Silvestre Pitti**
 - other authors welcome
 
 ### License
