@@ -181,17 +181,17 @@ object AdminUI extends Dialog {
       val model: DefaultTableModel = table.model.asInstanceOf[DefaultTableModel]
       model.setDataVector(data.asInstanceOf[Array[Array[AnyRef]]], columnNames.asInstanceOf[Array[AnyRef]])
       for (i <- 0 until table.model.getColumnCount) {
+        val col = table.peer.getColumnModel.getColumn(i)
         table.model.getColumnName(i) match {
-          case "PunchedTime" => table.peer.getColumnModel.getColumn(i).setPreferredWidth(115)
-          case "InsertTimestamp" => table.peer.getColumnModel.getColumn(i).setPreferredWidth(115)
-          case "ModifyTimestamp" => table.peer.getColumnModel.getColumn(i).setPreferredWidth(115)
-          case "In" => table.peer.getColumnModel.getColumn(i).setPreferredWidth(30)
-          case "SocialSecurityNum" => table.peer.getColumnModel.getColumn(i).setPreferredWidth(175)
-          case "Residence" => table.peer.getColumnModel.getColumn(i).setPreferredWidth(200)
+          case s"${s}Time${_}" => if (s != "ID") col.setPreferredWidth(115)
+          case "In" =>                           col.setPreferredWidth(30)
+          case "SocialSecurityNum" =>            col.setPreferredWidth(175)
+          case "Residence" =>                    col.setPreferredWidth(200)
+          case "Query" =>                        col.setPreferredWidth(280)
+          case "PreviousState" =>                col.setPreferredWidth(280)
           case _ =>
         }
       }
-
       tableTitle.text = title
     }
   }
@@ -311,7 +311,8 @@ object AdminUI extends Dialog {
     case ButtonClicked(`applyBtn`) => applyChange()
     case ButtonClicked(`undoBtn`) => resetChanges()
     case ButtonClicked(`closeBtn`) => System.exit(0)
-    case ButtonClicked(`chPwdBtn`) => hide()
+    case ButtonClicked(`chPwdBtn`) =>
+      hide()
       ChangePasswordUI("Admin", 1, 0, false)
   }
   timesRdo.doClick()
