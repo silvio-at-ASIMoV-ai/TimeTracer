@@ -29,13 +29,10 @@ object AdminUI extends Dialog {
   private var appending: Option[AppendData] = None
   private var deleting: Option[DeleteData] = None
   private val updates: ListBuffer[UpdateData] = new ListBuffer()
-//  private val updatesPending = MyLabel(" ")
-//  updatesPending.foreground = Color.red
   private val updatesPending = new MyLabel(" ") {
     preferredSize = new Dimension(100, 15)
     foreground = Color.red
   }
-
 
   private class MyTableModel extends DefaultTableModel {
     var lastValue: Option[Object] = None
@@ -144,7 +141,6 @@ object AdminUI extends Dialog {
     icon = new ImageIcon(getClass.getResource("/logo.png"))
   }
 
-  private val closeBtn: Button = new MyButton("Close")
   private val chPwdBtn: Button = new MyButton("Ch. Pwd")
   private val resetPwd: Button = new MyButton("Rst  Pwd")
   private val buttonPanel2: BoxPanel = new BoxPanel(Vertical) {
@@ -155,9 +151,14 @@ object AdminUI extends Dialog {
     peer.add(Box.createVerticalStrut(29))
   }
 
+  private val reportBtn: Button = new MyButton("Reports")
+  private val closeBtn: Button = new MyButton("Close")
   private val buttonPanel3: BoxPanel = new BoxPanel(Vertical) {
-    peer.add(Box.createVerticalStrut(45))
+    peer.add(Box.createVerticalStrut(28))
+    contents += reportBtn
+    peer.add(Box.createVerticalStrut(15))
     contents += closeBtn
+    peer.add(Box.createVerticalStrut(29))
   }
 
   private val bottomPanel: FlowPanel = new FlowPanel(FlowPanel.Alignment.Left)() {
@@ -327,7 +328,8 @@ object AdminUI extends Dialog {
   private val db = MySQL
   title = "Time Tracer - Admin"
   contents = adminPanel
-  listenTo(timesRdo, empsRdo, usersRdo, projsRdo, rolesRdo, logsRdo, applyBtn, undoBtn, closeBtn, chPwdBtn, resetPwd)
+  listenTo(timesRdo, empsRdo, usersRdo, projsRdo, rolesRdo, logsRdo,
+    applyBtn, undoBtn, closeBtn, chPwdBtn, resetPwd, reportBtn)
   reactions += {
     case ButtonClicked(`timesRdo`) => readTable("SELECT * FROM `TimeTracer`.`Times` ORDER BY PunchedTime DESC", "Times")
     case ButtonClicked(`empsRdo`) => readTable("SELECT * FROM `TimeTracer`.`Employees`", "Employees")
@@ -342,6 +344,9 @@ object AdminUI extends Dialog {
     case ButtonClicked(`chPwdBtn`) =>
       hide()
       ChangePasswordUI("Admin", 1, 0, false)
+    case ButtonClicked(`reportBtn`) =>
+      hide()
+      ReportsUI()
   }
   timesRdo.doClick()
   pack()
