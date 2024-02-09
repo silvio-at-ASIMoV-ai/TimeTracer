@@ -92,6 +92,7 @@ object AdminUI extends Dialog {
     model = new MyTableModel
     autoResizeMode = AutoResizeMode.Off
     showGrid = true
+    peer.setAutoCreateRowSorter(true)
     InternalUtilities.setDefaultTableEditorsClicks(peer, 2)
     private val DateTimeRenderer = new DateTimeTableEditor {
       getDatePickerSettings.setFormatForDatesCommonEra("dd/MM/yyyy")
