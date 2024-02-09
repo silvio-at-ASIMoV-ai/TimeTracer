@@ -1,6 +1,7 @@
 package com.asimov.timetracer
 
 import java.awt.event.{ActionEvent, KeyEvent}
+import java.time.{DateTimeException, LocalDate}
 import javax.swing.{AbstractAction, JButton, JComponent, JOptionPane, JRootPane, KeyStroke}
 import scala.swing.*
 
@@ -38,5 +39,23 @@ def showMessage(parent: java.awt.Component, msg: String, title: String, error: B
   else JOptionPane.showMessageDialog(parent, msg, title, JOptionPane.INFORMATION_MESSAGE)
 }
 
+def firstDayOfMonth(date: LocalDate): LocalDate = date.withDayOfMonth(1)
 
+def lastDayOfMonth(date: LocalDate): LocalDate = {
+  try {
+    date.withDayOfMonth(31)
+  } catch {
+    case _: DateTimeException => try {
+      date.withDayOfMonth(30)
+    } catch {
+      case _: DateTimeException => try {
+        date.withDayOfMonth(29)
+      } catch
+        case _: DateTimeException =>
+          date.withDayOfMonth(28)
+    }
+  }
 
+}
+
+def lastMonth(date: LocalDate): LocalDate = date.minusMonths(1)

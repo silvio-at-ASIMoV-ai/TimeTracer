@@ -1,6 +1,6 @@
 package com.asimov.timetracer.ui
 
-import com.asimov.timetracer.{MyButton, MyLabel, MySQL}
+import com.asimov.timetracer.{MyButton, MyLabel, MySQL, firstDayOfMonth, lastDayOfMonth, lastMonth}
 import com.github.lgooddatepicker.components.{DatePicker, DatePickerSettings}
 
 import java.awt.Desktop
@@ -8,7 +8,7 @@ import java.io.PrintWriter
 import java.net.URI
 import java.text.SimpleDateFormat
 import java.time.LocalDate
-import javax.swing.Box
+import javax.swing.{Box, ImageIcon}
 import scala.swing.Orientation.Vertical
 import scala.swing.event.ButtonClicked
 import scala.swing.{BoxPanel, Button, ComboBox, Dialog, FlowPanel}
@@ -242,8 +242,14 @@ object ReportsUI extends Dialog {
   private val dateSettings2 = new DatePickerSettings
   dateSettings2.setFormatForDatesCommonEra("yyyy/MM/dd")
   private val from = new DatePicker(dateSettings1)
+  private val fBtn =  from.getComponentToggleCalendarButton
+  fBtn.setText("")
+  fBtn.setIcon(new ImageIcon(getClass.getResource("/datepickerbutton1.png")))
   private val project: ComboBox[String] = new ComboBox[String](projects.keys.toList)
   private val to = new DatePicker(dateSettings2)
+  private val tBtn = to.getComponentToggleCalendarButton
+  tBtn.setText("")
+  tBtn.setIcon(new ImageIcon(getClass.getResource("/datepickerbutton1.png")))
   private val employee: ComboBox[String] = new ComboBox[String](employees.keys.toList)
   private val genBtn: Button = new MyButton("Generate")
   private val closeBtn: Button = new MyButton("Close")
@@ -289,18 +295,6 @@ object ReportsUI extends Dialog {
   }
   pack()
   centerOnScreen()
-  from.setDate(LocalDate.now().withDayOfMonth(1))
-  try {
-    to.setDate(LocalDate.now().withDayOfMonth(31))
-  } catch {
-    case _ => try {
-      to.setDate(LocalDate.now().withDayOfMonth(30))
-    } catch {
-      case _ => try {
-        to.setDate(LocalDate.now().withDayOfMonth(29))
-      } catch
-        case _ => 
-          to.setDate(LocalDate.now().withDayOfMonth(28))
-    }
-  }
+  from.setDate(firstDayOfMonth(lastMonth(LocalDate.now())))
+  to.setDate(lastDayOfMonth(lastMonth(LocalDate.now())))
 }
