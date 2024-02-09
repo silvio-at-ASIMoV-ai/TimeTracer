@@ -17,6 +17,8 @@ import javax.swing.event.{TableModelEvent, TableModelListener}
 import javax.swing.table.DefaultTableModel
 import scala.collection.mutable
 import scala.swing.Orientation.Vertical
+import scala.swing.ScrollPane.BarPolicy
+import scala.swing.ScrollPane.BarPolicy.Always
 import scala.swing.Table.AutoResizeMode
 import scala.swing.event.{ButtonClicked, KeyReleased}
 import scala.swing.event.Key.{Delete, Down}
@@ -122,7 +124,10 @@ object AdminUI extends Dialog {
   private val tableTitleContainer = new FlowPanel() {
     contents += tableTitle
   }
-  private val scrollPane: ScrollPane = new ScrollPane(table)
+  private val scrollPane: ScrollPane = new ScrollPane(table) {
+    horizontalScrollBarPolicy = Always
+    verticalScrollBarPolicy = Always
+  }
   private val scrolPaneContainer = new FlowPanel() {
     peer.add(Box.createHorizontalStrut(5))
     contents += scrollPane
@@ -272,23 +277,25 @@ object AdminUI extends Dialog {
         val row: util.Vector[String] = new util.Vector[String](table.model.getColumnCount)
         table.model.asInstanceOf[DefaultTableModel].addRow(row)
         enableTableButtons(false)
-        updatesPending.text = "Append Operation Pending!"
+        updatesPending.text = "Append Pending!"
     }
   }
 
   private def deleteRow(): Unit = {
     val tableName = tableTitle.text
-    val row = table.peer.getEditingRow
-    val previousValue = (0 until table.model.getColumnCount)
-      .map(i => s"${table.model.getColumnName(i)}=${table.model.getValueAt(row, i)}")
-      .mkString(", ")
-    val idCol = table.model.getColumnName(0)
-    val idVal = table.model.getValueAt(row, 0).toString
-    table.peer.getCellEditor().stopCellEditing()
-    table.model.asInstanceOf[DefaultTableModel].removeRow(row)
-    updatesPending.text = "Delete Operation Pending!"
-    enableTableButtons(false)
-    deleting = Some(DeleteData(tableName, previousValue, idCol, idVal))
+    if (tableName != "Logs") {
+      val row = table.peer.getSelectedRow
+      val previousValue = (0 until table.model.getColumnCount)
+        .map(i => s"${table.model.getColumnName(i)}=${table.model.getValueAt(row, i)}")
+        .mkString(", ")
+      val idCol = table.model.getColumnName(0)
+      val idVal = table.model.getValueAt(row, 0).toString
+      if(table.peer.isEditing) table.peer.getCellEditor().stopCellEditing()
+      table.model.asInstanceOf[DefaultTableModel].removeRow(row)
+      updatesPending.text = "Delete Pending!"
+      enableTableButtons(false)
+      deleting = Some(DeleteData(tableName, previousValue, idCol, idVal))
+    }
   }
 
   private def applyChange(): Unit = {
