@@ -1,17 +1,21 @@
 package com.asimov.timetracer.ui
 
+import com.asimov.timetracer.ui.ReportsUI.getClass
 import com.asimov.timetracer.{Log, MyButton, MyLabel, MySQL, showMessage}
+import com.github.lgooddatepicker.tableeditors.{DateTableEditor, DateTimeTableEditor}
+import com.github.lgooddatepicker.zinternaltools.InternalUtilities
 
 import java.awt.Color
 import java.sql.ResultSet
 import java.text.SimpleDateFormat
+import java.time.format.DateTimeFormatter
+import java.time.{LocalDate, LocalDateTime}
 import java.util
 import java.util.Date
 import javax.swing.{Box, ImageIcon, ListSelectionModel}
 import javax.swing.event.{TableModelEvent, TableModelListener}
 import javax.swing.table.DefaultTableModel
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 import scala.swing.Orientation.Vertical
 import scala.swing.Table.AutoResizeMode
 import scala.swing.event.{ButtonClicked, KeyReleased}
@@ -25,56 +29,88 @@ case class AppendData(tableName: String, columns: mutable.HashMap[String, String
 case class DeleteData(tableName: String, previousValue: String, idCol: String, IdVal: String)
 
 object AdminUI extends Dialog {
-
   private var appending: Option[AppendData] = None
   private var deleting: Option[DeleteData] = None
-  private val updates: ListBuffer[UpdateData] = new ListBuffer()
+  private val updates: mutable.ListBuffer[UpdateData] = new mutable.ListBuffer()
   private val updatesPending = new MyLabel(" ") {
     preferredSize = new Dimension(100, 15)
     foreground = Color.red
   }
 
   private class MyTableModel extends DefaultTableModel {
-    var lastValue: Option[Object] = None
+    private var lastValue: Option[Object] = None
+
+    addTableModelListener((e: TableModelEvent) => {
+      appending match {
+        case Some(appendData) => // Append Mode
+          if (e.getColumn >= 0) {
+            val colName = getColumnName(e.getColumn)
+            val colValue = getValueAt(e.getFirstRow, e.getColumn).toString
+            appendData.columns += (colName -> s"'$colValue'")
+          }
+        case None => // Update Mode
+          if (e.getFirstRow >= 0 && e.getColumn >= 0) {
+            if (tableTitle.text != "Logs") {
+              if (lastValue.getOrElse("").toString != getValueAt(e.getFirstRow, e.getColumn).toString) {
+                updates += UpdateData(tableTitle.text,
+                  getColumnName(e.getColumn),
+                  getValueAt(e.getFirstRow, e.getColumn).toString,
+                  s"${getColumnName(e.getColumn)}=$lastValue",
+                  getColumnName(0),
+                  getValueAt(e.getFirstRow, 0).toString)
+                updatesPending.text = "Updates Pending!"
+                enableTableButtons(false)
+              }
+            }
+          }
+      }
+    })
+
     override def setValueAt(value: Object, row: Int, col: Int): Unit = {
       lastValue = Some(getValueAt(row, col))
       super.setValueAt(value, row, col)
     }
+
+    override def isCellEditable(row: Int, column: Int): Boolean = this.getColumnName(column) match {
+        case str if str.startsWith("ID") => false
+        case str if str.endsWith("Timestamp") => false
+        case "EmployeeID" if appending.isEmpty => false
+        case "InsertUser" => false
+        case "ModifyUser" => false
+        case "Query" => false
+        case "PreviousState" => false
+        case _ => true
+      }
   }
 
   private val table = new Table() {
     peer.setSelectionMode(ListSelectionModel.SINGLE_SELECTION)
     peer.setPreferredScrollableViewportSize(new Dimension(750, 200))
     peer.setFillsViewportHeight(true)
-    model = new MyTableModel()
+    model = new MyTableModel
     autoResizeMode = AutoResizeMode.Off
     showGrid = true
-    model.addTableModelListener((e: TableModelEvent) => {
-      appending match {
-        case Some(appendData) =>   // Append Mode
-          if (e.getColumn >= 0) {
-            val colName = model.getColumnName(e.getColumn)
-            val colValue = model.getValueAt(e.getFirstRow, e.getColumn).toString
-            appendData.columns += (colName -> s"'$colValue'")
-          }
-        case None =>               // Update Mode
-          if (e.getFirstRow >= 0 && e.getColumn >= 0) {
-          if (tableTitle.text != "Logs") {
-            val lastValue = model.asInstanceOf[MyTableModel].lastValue.getOrElse("").toString
-            if(lastValue != model.getValueAt(e.getFirstRow, e.getColumn).toString) {
-              updates += UpdateData(tableTitle.text,
-                model.getColumnName(e.getColumn),
-                model.getValueAt(e.getFirstRow, e.getColumn).toString,
-                s"${model.getColumnName(e.getColumn)}=$lastValue",
-                model.getColumnName(0),
-                model.getValueAt(e.getFirstRow, 0).toString)
-              updatesPending.text = "Updates Pending!"
-              enableTableButtons(false)
-            }
-          }
-        }
-      }
-    })
+    InternalUtilities.setDefaultTableEditorsClicks(peer, 2)
+    private val DateTimeRenderer = new DateTimeTableEditor {
+      getDatePickerSettings.setFormatForDatesCommonEra("dd/MM/yyyy")
+      getTimePickerSettings.setFormatForDisplayTime("HH:mm")
+    }
+    peer.setDefaultRenderer(classOf[LocalDateTime], DateTimeRenderer)
+    private val dateTimeEditor = new DateTimeTableEditor {
+      clickCountToEdit = 2
+      getDatePickerSettings.setFormatForDatesCommonEra("dd/MM/yyyy")
+      getTimePickerSettings.setFormatForDisplayTime("HH:mm")
+    }
+    peer.setDefaultEditor(classOf[LocalDateTime], dateTimeEditor)
+    private val DateRenderer = new DateTableEditor {
+      getDatePickerSettings.setFormatForDatesCommonEra("dd/MM/yyyy")
+    }
+    peer.setDefaultRenderer(classOf[LocalDate], DateRenderer)
+    private val dateEditor = new DateTableEditor {
+      getDatePickerSettings.setFormatForDatesCommonEra("dd/MM/yyyy")
+      clickCountToEdit = 2
+    }
+    peer.setDefaultEditor(classOf[LocalDate], dateEditor)
     listenTo(keys)
     reactions += {
       case KeyReleased(table, Down, _, _) => appendRow()
@@ -100,7 +136,7 @@ object AdminUI extends Dialog {
   }
 
   private val timesRdo: RadioButton = new RadioButton("Times")
-  private val empsRdo: RadioButton = new RadioButton("Empolyees")
+  private val empsRdo: RadioButton = new RadioButton("Employees")
   private val usersRdo: RadioButton = new RadioButton("Users")
   private val projsRdo: RadioButton = new RadioButton("Projects")
   private val rolesRdo: RadioButton = new RadioButton("Roles")
@@ -185,20 +221,29 @@ object AdminUI extends Dialog {
 
   private def readTable(query: String, title: String): Unit = {
     if(db.connection.nonEmpty) {
+      val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+      val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
       val rs: ResultSet = db.connection.get.createStatement().executeQuery(query)
       val meta = rs.getMetaData
       val colCount = meta.getColumnCount
-      val columnNames = (1 to colCount).toArray.map(meta.getColumnName)
-      val data: Array[Array[String]] = Iterator.from(0).takeWhile(_ => rs.next())
-        .map(_ => (1 to colCount).toArray.map(rs.getString))
-        .toArray
+      val columnNames = (1 to colCount).toArray.map(meta.getColumnName).asInstanceOf[Array[AnyRef]]
+      val data = Iterator.from(0).takeWhile(_ => rs.next())
+        .map(_ => (1 to colCount).toArray.map(c => {
+            meta.getColumnTypeName(c) match {
+              case "BIT" => rs.getBoolean(c)
+              case "DATE" => LocalDate.parse(rs.getString(c), dateFormatter)
+              case "DATETIME" => LocalDateTime.parse(rs.getString(c), dateTimeFormatter)
+              case _ => rs.getString(c)
+            }})).toArray.asInstanceOf[Array[Array[AnyRef]]]
       val model: DefaultTableModel = table.model.asInstanceOf[DefaultTableModel]
-      model.setDataVector(data.asInstanceOf[Array[Array[AnyRef]]], columnNames.asInstanceOf[Array[AnyRef]])
+      table.model = model
+      model.setDataVector(data, columnNames)
       for (i <- 0 until table.model.getColumnCount) {
         val col = table.peer.getColumnModel.getColumn(i)
-        table.model.getColumnName(i) match {
-          case s"${s}Time${_}" => if (s != "ID") col.setPreferredWidth(115)
+        model.getColumnName(i) match {
+          case s"${s}Time${_}" => if (s != "ID") col.setPreferredWidth(210)
           case "In" =>                           col.setPreferredWidth(30)
+          case "BirthDate" =>                    col.setPreferredWidth(100)
           case "SocialSecurityNum" =>            col.setPreferredWidth(175)
           case "Residence" =>                    col.setPreferredWidth(200)
           case "Query" =>                        col.setPreferredWidth(280)
@@ -249,9 +294,10 @@ object AdminUI extends Dialog {
   private def applyChange(): Unit = {
     if (db.connection.nonEmpty) {
       if(updates.nonEmpty && deleting.isEmpty){
-        val oks: ListBuffer[Boolean] = ListBuffer()
+        val dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
+        val oks: mutable.ListBuffer[Boolean] = mutable.ListBuffer()
         for (update <- updates) {
-          val timestamp = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date())
+          val timestamp = dateFormat.format(new Date())
           val mod = if (update.tableName == "Times") s", ModifyUser = 'Admin', ModifyTimestamp = '$timestamp' " else ""
           val query = s"UPDATE `TimeTracer`.`${update.tableName}` SET `${update.colName}` = ? $mod WHERE `${update.idCol}` = ?"
           val loggedQuery = s"UPDATE `TimeTracer`.`${update.tableName}` " +
@@ -331,12 +377,12 @@ object AdminUI extends Dialog {
   listenTo(timesRdo, empsRdo, usersRdo, projsRdo, rolesRdo, logsRdo,
     applyBtn, undoBtn, closeBtn, chPwdBtn, resetPwd, reportBtn)
   reactions += {
-    case ButtonClicked(`timesRdo`) => readTable("SELECT * FROM `TimeTracer`.`Times` ORDER BY PunchedTime DESC", "Times")
+    case ButtonClicked(`timesRdo`) => readTable("SELECT * FROM `TimeTracer`.`Times` ORDER BY `PunchedTime` DESC", "Times")
     case ButtonClicked(`empsRdo`) => readTable("SELECT * FROM `TimeTracer`.`Employees`", "Employees")
     case ButtonClicked(`usersRdo`) => readTable("SELECT `UserName`, `RoleID`, `EmployeeID` FROM `TimeTracer`.`Users`", "Users")
     case ButtonClicked(`projsRdo`) => readTable("SELECT * FROM `TimeTracer`.`Projects`", "Projects")
     case ButtonClicked(`rolesRdo`) => readTable("SELECT * FROM `TimeTracer`.`Roles`", "Roles")
-    case ButtonClicked(`logsRdo`) => readTable("SELECT * FROM `TimeTracer`.`Log`", "Logs")
+    case ButtonClicked(`logsRdo`) => readTable("SELECT * FROM `TimeTracer`.`Log` ORDER BY `IDLog` DESC", "Logs")
     case ButtonClicked(`applyBtn`) => applyChange()
     case ButtonClicked(`undoBtn`) => resetChanges()
     case ButtonClicked(`closeBtn`) => System.exit(0)
