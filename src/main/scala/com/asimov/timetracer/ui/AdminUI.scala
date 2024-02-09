@@ -303,7 +303,11 @@ object AdminUI extends Dialog {
           val loggedQuery = s"UPDATE `TimeTracer`.`${update.tableName}` " +
             s"SET `${update.colName}` = '${update.colValue}' $mod WHERE `${update.idCol}` = '${update.IdVal}'"
           val statement = db.connection.get.prepareStatement(query)
-          statement.setString(1, update.colValue)
+          update.colValue match {
+            case "true" => statement.setBoolean(1, true)
+            case "false" => statement.setBoolean(1, false)
+            case _ => statement.setString(1, update.colValue)
+          }
           statement.setString(2, update.IdVal)
           val ok = statement.executeUpdate() > 0
           if(ok) Log(loggedQuery, update.previoiusValue)
