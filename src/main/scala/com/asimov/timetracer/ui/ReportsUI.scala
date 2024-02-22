@@ -67,10 +67,14 @@ object ReportsUI extends Dialog {
   }
 
   private def getSummary(reportType: Int, reportData: List[ReportData]): String = {
-    def convert2hmStr(mins: Long): String = {
-      val hours = if(mins / 60 > 0) (mins / 60).toString + " hours " else ""
-      val minutes = if(mins % 60 > 0) (mins % 60).toString + " minutes" else ""
-      hours + minutes
+    def convert2hmStr(mins: Either[String, Long]): String = {
+      mins match {
+        case Left(e) => e
+        case Right(m) =>
+          val hours = if(m / 60 > 0) (m / 60).toString + " hours " else ""
+          val minutes = if(m % 60 > 0) (m % 60).toString + " minutes" else ""
+          hours + minutes
+      }
     }
 
     val formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm")
@@ -82,17 +86,19 @@ object ReportsUI extends Dialog {
     }
     val sums = for (elem <- grouped) yield {
       val times = if(elem._2.last.in) elem._2.dropRight(1) else elem._2   //remove last time if it's IN
-      val diffs = for(time <- times.grouped(2)) yield {
-        val from = formatter.parse(time.head.time).getTime
-        val to = formatter.parse(time(1).time).getTime
-        (to - from) / 60000
-      }
-      (elem._1, diffs.sum)
+      if(times.length % 2 == 0) {
+        val diffs = for (time <- times.grouped(2)) yield {
+          val from = formatter.parse(time.head.time).getTime
+          val to = formatter.parse(time(1).time).getTime
+          (to - from) / 60000
+        }
+        (elem._1, Right(diffs.sum))
+      } else (s"<font color='red'><b>${elem._1}</b></font>", Left("<font color='red'><b>Missing Time</b></font>"))
     }
     val summary = sums.map(r => s"<td>${r._1}</td><td>${convert2hmStr(r._2)}</td>")
       .mkString("<tr>", "</tr><tr>", "</tr>")
-    val total = s"<td><font color='red'><b>Total</b></font></td>" +
-      s"<td><font color='red'><b>${convert2hmStr(sums.map(_._2).sum)}</b></font></td>"
+    val total = s"<td><font color='red'><b>Total</b></font></td>" +                       // ignore Left in sum
+      s"<td><font color='red'><b>${convert2hmStr(Right(sums.map(_._2.getOrElse(0L)).sum))}</b></font></td>"
     summary + total
   }
 
