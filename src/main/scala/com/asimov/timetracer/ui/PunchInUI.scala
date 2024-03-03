@@ -79,7 +79,7 @@ object PunchInUI extends Dialog {
 
   private val lastPunchedIn = new MyLabel("")
   private val lastPunchedInPanel: FlowPanel = new FlowPanel(FlowPanel.Alignment.Left)() {
-    contents += new MyLabel("Punched in at")
+    contents += new MyLabel(" ")
     contents += lastPunchedIn
   }
 
@@ -116,7 +116,7 @@ object PunchInUI extends Dialog {
         out.selected = i
         in.selected = !i
         projectsLV.selectIndices(projects.indexOf(projects.filter(_._1 == projId).head))
-        lastPunchedIn.text = formatter.format(time)
+        lastPunchedIn.text = s"Punched ${if(i) "in" else "out"} at ${formatter.format(time)}"
       case None =>
     }
   }
